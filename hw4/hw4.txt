@@ -1,0 +1,16 @@
+useradd -m bob &&
+adduser bob sudo &&
+cd /home/bob &&
+echo "sudo hostnamectl set-hostname ubuntu22" > /home/bob/change_hostname.sh &&
+sudo chown bob:bob /home/bob/change_hostname.sh &&
+chmod 700 /home/bob/change_hostname.sh && 
+sudo sh change_hostname.sh &&
+hostname &&
+sudo reboot 
+
+
+sudo apt update
+sudo apt install nginx -y
+sudo systemctl status nginx
+sudo netstat -tulpn
+sudo tcpdump host 127.0.0.1
