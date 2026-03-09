@@ -1,0 +1,8 @@
+Open /etc/ssh/sshd_config and modify or add these lines:
+
+Port 2222
+PermitRootLogin no
+PasswordAuthentication no
+AllowUsers john
+PubkeyAuthentication yes
+
