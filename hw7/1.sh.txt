@@ -1,0 +1,32 @@
+# adduser
+sudo useradd -m dev1
+sudo useradd -m dev2
+sudo useradd -m dev3
+#addgroup
+sudo groupadd developers
+sudo groupadd webmasters
+#adduser to group
+sudo usermod -aG developers dev1
+sudo usermod -aG developers dev2
+sudo usermod -aG webmasters dev3
+#adddefGroup
+sudo usermod -g developers dev1
+sudo usermod -g developers dev2
+sudo usermod -g developers dev3
+
+#adduser backupdev and copy
+
+sudo useradd -m -d /home/backupdev backupdev
+sudo cp -r /home/dev1/. /home/backupdev/
+sudo chown -R backupdev:backupdev /home/backupdev
+
+
+# chgrpoup to path
+
+sudo mkdir /home/web_project
+sudo chgrp developers /home/web_project
+sudo chmod 770 /home/web_project 
+
+# 
+sudo touch /home/my.log
+sudo chattr +a /home/my.log
