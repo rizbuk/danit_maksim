@@ -1,0 +1,9 @@
+[Unit]
+Description=Directory Watcher Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/watch_dir.sh
+User=YOUR_USER
+Environment=HOME=/home/YOUR_USER
+Restart=always
