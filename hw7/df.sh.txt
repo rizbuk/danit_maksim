@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Аргумент $1 — порог срабатывания в процентах
+THRESHOLD=$1
+LOG_FILE="/var/log/disk.log"
+
+# Получаем текущее использование корня (/)
+USAGE=$(df / | awk 'NR==2 {print $5}' | sed 's/%//')
+
+if [ "$USAGE" -gt "$THRESHOLD" ]; then
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - WARNING: Disk usage is at ${USAGE}% (Threshold: ${THRESHOLD}%)" >> "$LOG_FILE"
+fi

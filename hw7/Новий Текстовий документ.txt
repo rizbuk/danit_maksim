@@ -1,0 +1,12 @@
+apt install monit ;
+cat <<EOF > /etc/monit/conf.d/nginx
+check unit nginx with name nginx
+    start program = "/usr/bin/systemctl start nginx"
+    stop  program = "/usr/bin/systemctl stop nginx"
+
+    # Проверка доступности на порту 80
+    if failed host 127.0.0.1 port 80 protocol http then restart
+
+    # Остановка попыток после 7 проверок
+    if 7 restarts within 7 cycles then timeout
+EOF
