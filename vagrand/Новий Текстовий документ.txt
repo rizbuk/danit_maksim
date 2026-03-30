@@ -1,0 +1,84 @@
+В вашем коде есть несколько критических ошибок, которые помешают запуску. Основная проблема в том, что Vagrant.configure("3") не существует (актуальная версия API — "2"), а описание нескольких машин в одном файле требует использования блоков config.vm.define.
+Вот исправленный и оптимизированный Vagrantfile:
+ruby
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+
+  # Машина 1: Nginx на порту 82
+  config.vm.define "web" do |web|
+    web.vm.network "public_network"
+    web.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      apt-get install -y nginx
+      sed -i 's/listen 80/listen 82/g' /etc/nginx/sites-available/default
+      systemctl restart nginx
+    SHELL
+  end
+
+  # Машина 2: PostgreSQL
+  config.vm.define "db" do |db|
+    db.vm.network "public_network"
+    db.vm.provision "shell", inline: <<-SHELL
+      apt-get update
+      # Исправлено имя пакета (postgresql)
+      apt-get install -y postgresql postgresql-contrib
+      systemctl enable postgresql
+      systemctl start postgresql
+    SHELL
+  end
+end
+Используйте код с осторожностью.
+
+Что было исправлено:
+Объединение блоков: Вместо двух разных Vagrant.configure использован один общий блок с именованием машин через config.vm.define.
+Версия API: Заменено ошибочное "3" на стандартное "2".
+Имя пакета БД: В Ubuntu пакет называется postgresql, а не просто postgres.
+Лишние команды: Удален systemctl restart nginx из блока базы данных, так как там не устанавливается веб-сервер.
+Хотите добавить проброс портов (forwarded_port), чтобы обращаться к сервисам через localhost вашего ПК?
+
+
+
+
+postgresql open port in vagrant
+Для того чтобы PostgreSQL стал доступен извне Vagrant-машины (например, с вашего основного компьютера), недостаточно просто установить его. Нужно выполнить три шага: пробросить порт в Vagrantfile, разрешить подключения во внутреннем конфиге Postgres и обновить правила доступа. 
+1. Обновите Vagrantfile 
+Добавьте строку forwarded_port, чтобы порт 5432 внутри виртуалки был доступен как 5432 (или другой свободный) на вашем хосте. 
+ruby
+config.vm.define "db" do |db|
+  db.vm.network "public_network"
+  # Проброс порта: guest — внутри, host — снаружи
+  db.vm.network "forwarded_port", guest: 5432, host: 5432 
+
+  db.vm.provision "shell", inline: <<-SHELL
+    apt-get update
+    apt-get install -y postgresql postgresql-contrib
+    
+    # Разрешаем PostgreSQL слушать все интерфейсы (а не только localhost)
+    sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/g" /etc/postgresql/12/main/postgresql.conf
+
+    # Разрешаем подключения со всех IP (для тестов)
+    echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/12/main/pg_hba.conf
+
+    systemctl restart postgresql
+  SHELL
+end
+Используйте код с осторожностью.
+
+2. Важные нюансы
+Пути к конфигам: В Ubuntu Focal (20.04) по умолчанию ставится Postgres 12, поэтому пути выглядят как /etc/postgresql/12/main/.... Если версия другая, измените цифру в пути.
+Безопасность: Настройка 0.0.0.0/0 в pg_hba.conf открывает доступ всем. Для реальных проектов лучше указывать конкретный IP или подсеть.
+Пароль пользователя: По умолчанию у пользователя postgres нет пароля для внешних подключений. Вам нужно зайти в VM (vagrant ssh db) и установить его:
+bash
+sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'your_password';"
+Используйте код с осторожностью.
+
+ 
+Ploi
+Ploi
+ +2
+3. Как проверить подключение
+После vagrant reload вы сможете подключиться к базе с вашего компьютера, используя: 
+Host: localhost (если использовали forwarded_port) или Public IP виртуалки.
+Port: 5432.
+User: postgres. 
+Нужно ли вам помочь с настройкой автоматического создания базы данных или пользователя при запуске Vagrant?
