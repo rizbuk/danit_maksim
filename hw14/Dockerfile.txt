@@ -1,0 +1,6 @@
+FROM python:3.10-slim
+WORKDIR /usr/src/myapp
+COPY ./py /usr/src/myapp
+RUN pip install --no-cache-dir flask gunicorn
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "123:app"]
