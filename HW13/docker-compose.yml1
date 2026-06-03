@@ -1,0 +1,30 @@
+services:
+  nginx:
+    image: nginx
+    ports:
+      - "8080:80"
+  apache:
+    depends_on:
+      - postgres
+
+    image: httpd
+    ports:
+      - "8081:81"
+
+  postgres:
+    image: postgres
+    networks:
+      - dbn
+    environment:
+      - POSTGRES_PASSWORD=test123
+    ports:
+      - "5434:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready -h 127.0.0.1 -p 5434 -U postgres"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
+networks:
+  webserver:
+  dbn:

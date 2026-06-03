@@ -1,0 +1,29 @@
+CREATE USER sonat WITH PASSWORD '1234qwer';
+
+CREATE DATABASE sonat OWNER sonat;
+
+GRANT ALL PRIVILEGES ON DATABASE sonat TO sonat;
+
+
+
+
+sonar.jdbc.username=sonat
+sonar.jdbc.password=1234qwer
+sonar.jdbc.url=jdbc:postgresql://localhost/sonat
+
+
+Environment="SONAR_JDBC_URL=jdbc:postgresql://localhost/sonat"
+Environment="SONAR_JDBC_USERNAME=sonat"
+Environment="SONAR_JDBC_PASSWORD=1234qwer"
+
+sqp_6caded2a4e120f5c74083a466790a72f2b920486
+
+
+sudo ufw default deny incoming
+sudo ufw allow 22/tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw allow 8080/tcp
+sudo ufw allow 5432/tcp
+sudo ufw enable
+sudo ufw status verbose

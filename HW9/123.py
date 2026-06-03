@@ -1,10 +1,18 @@
-from flask import Flask
+[Unit]
+Description=Python Service for My App
+After=network.target
 
-app = Flask(__name__)
+[Service]
+# Користувач, від якого запускається скрипт
+User=root
+# Шлях до папки з проектом
+WorkingDirectory=/home/ubuntu/py/venv/
+# Повний шлях до Python (краще використовувати Virtualenv) та скрипту
+ExecStart=/home/ubuntu/py/venv/bin/python /home/ubuntu/py/venv/main.py
+# Автоматичний перезапуск при краху
+Restart=always
+# Затримка перед перезапуском
+RestartSec=5
 
-@app.route("/")
-def home():
-    return "Hello from Yurii :)!"
-
-if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=8000)
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,65 @@
+pipeline {
+
+    agent any
+     parameters{
+        booleanParam(name: 'SKIP_CACHE', defaultValue: false, description: 'Toggle to docker build without cache')
+    }
+
+ 
+
+    stages {
+
+        stage('git clone') {
+
+            steps {
+
+                cleanWs()
+
+                git branch: 'main', url: 'https://github.com/rizbuk/pc.git'
+
+                sh "ls -la"
+
+            }
+
+        }
+
+        stage('docker build') {
+
+            steps {
+
+                sh "docker build -t maks83/petklinikkkkkk:v8 -t petclinic:latest ."
+
+            }
+
+         }
+        stage('docker_push') {
+
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker_pass', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+    // some block
+
+                    sh "docker login -u $USER -p $PASS"
+                    sh "docker push  maks83/petklinikkkkkk:v8"
+                }
+            }
+
+        }
+    }
+}
+
+
+
+
+//  parameters{
+//         booleanParam(name: 'SKIP_CACHE', defaultValue: false, description: 'Toggle to docker build without cache')
+//     }
+
+
+
+//  script{
+//                     if (params.SKIP_CACHE) {
+//                        sh "docker build --no-cache -t 17062000/petclinic-new:latest"
+//                     } else {
+//                         sh "docker build -t 17062000/petclinic-new:latest"
+//                     }
+//                 }

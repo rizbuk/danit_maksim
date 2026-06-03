@@ -1,0 +1,36 @@
+pipeline {
+    agent any
+
+    parameters{
+        booleanParam(name: 'SKIP_CACHE', defaultValue: false, description: 'Toggle to docker build without cache')
+    }
+
+    stages {
+        stage('git clone') {
+            steps {
+                cleanWs()
+                git branch: 'main', url: 'https://github.com/Mrbeeware/petclinic.git'
+                sh "ls -la"
+            }
+        }
+        stage('docker build') {
+            steps {
+                script{
+                    if (params.SKIP_CACHE) {
+                       sh "docker build --no-cache -t 17062000/petclinic-new:latest"
+                    } else {
+                        sh "docker build -t 17062000/petclinic-new:latest"
+                    }
+                }
+            }
+        }
+        stage('docker push'){
+            steps{
+                withCredentials([usernamePassword(credentialsId: 'docker_hub_secret', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    sh "docker login -u ${USER} -p ${PASS}"
+                    sh "docker push 17062000/petclinic-new:latest"
+                }
+            }
+        }
+    }
+}
