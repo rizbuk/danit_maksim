@@ -1,0 +1,24 @@
+Vagrant.configure("2") do |config|
+  config.vm.box = "ubuntu/focal64"
+  # Машина 1: docker gitlab ci
+  config.vm.define "w1eb" do |w1eb|
+    w1eb.vm.network "public_network"
+    w1eb.vm.provision "shell", inline: <<-SHELL
+apt update 
+apt install docker.io -y
+curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" -o script.deb.sh
+sudo bash script.deb.sh
+sudo apt update 
+sudo apt install gitlab-runner gitlab-runner-helper-images -y
+sudo gitlab-runner start
+sudo gitlab-runner register \
+  --non-interactive \
+  --url "https://gitlab.com/" \
+  --token "token" \
+  --executor "docker" \
+  --docker-image "alpine:latest"
+sed -i 's/privileged = false/privileged = true/g' /etc/gitlab-runner/config.toml
+sudo adduser gitlab-runner docker
+   SHELL
+  end
+end
