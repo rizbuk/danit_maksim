@@ -1,7 +1,7 @@
 import json
 import boto3
 
-# Ініціалізуємо клієнт для роботи з EC2
+## Ініціалізуємо клієнт для роботи з EC2
 ec2 = boto3.client('ec2')
 
 def lambda_handler(event, context):
