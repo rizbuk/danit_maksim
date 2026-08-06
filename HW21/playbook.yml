@@ -1,0 +1,67 @@
+---
+- name: Налаштування Docker та Nginx через Docker Compose
+  hosts: web_servers
+  become: true
+  tasks:
+    - name: Оновлення кешу пакетів
+      apt:
+        update_cache: yes
+
+    - name: Встановлення необхідних системних пакетів
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+
+    - name: Додавання GPG ключа Docker
+      apt_key:
+        url: https://docker.com
+        state: present
+
+    - name: Додавання репозиторію Docker
+      apt_repository:
+        repo: "deb [arch=amd64] https://docker.com {{ ansible_facts['distribution_release'] }} stable"
+        state: present
+
+    - name: Встановлення Docker та Docker Compose
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Перевірка запуску Docker
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Створення директорії для проекту
+      file:
+        path: /opt/nginx-app
+        state: directory
+        mode: '0755'
+
+    - name: Створення файлу docker-compose.yml
+      copy:
+        dest: /opt/nginx-app/docker-compose.yml
+        content: |
+          version: '3'
+          services:
+            web:
+              image: nginx:latest
+              ports:
+                - "80:80"
+              restart: always
+
+    - name: Запуск Nginx через Docker Compose
+      shell: docker compose up -d
+      args:
+        chdir: /opt/nginx-app
