@@ -1,0 +1,137 @@
+---
+- name: Configure Jenkins Master with Nginx Reverse Proxy
+  hosts: all
+  become: true
+  vars:
+    jenkins_java_version: openjdk-21-jre
+
+
+  tasks:
+
+    - name: Install Java (required for Jenkins)
+      apt:
+        name: "{{ jenkins_java_version }}"
+        state: present
+
+    # ДОДАТКОВИЙ КРОК 1: Гарантуємо, що Java 21 вибрана головною в системі
+    - name: Set Java 21 as default alternative
+      community.general.alternatives:
+        name: java
+        path: /usr/lib/jvm/java-21-openjdk-amd64/bin/java
+        link: /usr/bin/java
+
+    # ДОДАТКОВИЙ КРОК 2: Видаляємо стару версію Java 17, якщо вона залишилась і заважає
+    - name: Remove old openjdk-17 packages to avoid conflicts
+      apt:
+        name:
+          - openjdk-17-jre
+          - openjdk-17-jre-headless
+        state: absent
+        purge: yes
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+ 
+    - name: Update apt cache and install prerequisites
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        name:
+          - curl
+          - gnupg
+          - apt-transport-https
+          - ca-certificates
+        state: present
+
+    - name: Install Java (required for Jenkins)
+      apt:
+        name: "{{ jenkins_java_version }}"
+        state: present
+
+    # Виправлено: Модуль deb822_repository замість застарілих apt_key та apt_repository
+    #    - name: Add Jenkins APT repository (DEB822 format)
+    #     ansible.builtin.deb822_repository:
+    #        name: jenkins
+    #       types: deb
+    #        uris: https://jenkins.io
+    #       suites: binary/
+    #       signed_by: https://jenkins.io/jenkins.io-2023.key
+    #  state: present
+
+    - name: Add Jenkins APT repository (DEB822 format)
+      ansible.builtin.deb822_repository:
+        name: jenkins
+        types: deb
+        uris: https://pkg.jenkins.io/debian-stable
+        suites: binary/
+        signed_by: https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key
+        state: present      
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Ensure Jenkins service is started and enabled
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Deploy Nginx reverse proxy configuration
+      template:
+        src: templates/jenkins.nginx.conf.j2
+        dest: /etc/nginx/sites-available/jenkins.conf
+      notify: Restart Nginx
+
+    - name: Enable Jenkins Nginx site
+      file:
+        src: /etc/nginx/sites-available/jenkins.conf
+        dest: /etc/nginx/sites-enabled/jenkins.conf
+        state: link
+
+    - name: Remove default Nginx site configuration
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Restart Nginx
+
+        #    - name: Retrieve Jenkins Initial Admin Password
+        #      slurp:
+        #        src: /var/local/jenkins/secrets/initialAdminPassword
+        #      register: admin_password_b64
+        #      ignore_errors: true
+
+        #    - name: Alternative path for Initial Admin Password (if standard /var/lib)
+        #      slurp:
+        #       src: /var/lib/jenkins/secrets/initialAdminPassword
+        #      register: admin_password_alt_b64
+        #      when: admin_password_b64.failed
+    - name: Retrieve Jenkins Initial Admin Password
+      ansible.builtin.slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: admin_password_b64
+
+    - name: Output Initial Admin Password
+      ansible.builtin.debug:
+        msg: "Jenkins Initial Admin Password is: {{ admin_password_b64.content | b64decode }}"
+
+    - name: Output Initial Admin Password
+      debug:
+        msg: >-
+          "Jenkins Initial Admin Password is: {{ (admin_password_b64.failed) | ternary(admin_password_alt_b64.content | b64decode, admin_password_b64.content | b64decode) }}"
+
+  handlers:
+    - name: Restart Nginx
+      systemd:
+        name: nginx
+        state: restarted
+
