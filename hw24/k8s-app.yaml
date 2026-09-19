@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: random-string-deployment
+  labels:
+    app: random-string
+spec:
+  replicas: 3 # Створюємо 3 поди для демонстрації розподілу трафіку
+  selector:
+    matchLabels:
+      app: random-string
+  template:
+    metadata:
+      labels:
+        app: random-string
+    spec:
+      containers:
+      - name: python-app
+        image: maks83/random-string-app # Ваш образ із Docker Hub
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000 # Порт, який слухає Python-скрипт всередині контейнера
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: random-string-service
+spec:
+  type: ClusterIP # Або NodePort, якщо тестуєте на Minikube/локально без порт-форвардингу
+  selector:
+    app: random-string
+  ports:
+    - protocol: TCP
+      port: 80        # Порт сервісу
+      targetPort: 5000 # Порт поду
