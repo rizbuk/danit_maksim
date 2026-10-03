@@ -1,0 +1,59 @@
+version: '3.8'
+
+networks:
+  efk-net:
+    driver: bridge
+
+services:
+  # 1. Elasticsearch - збереження та індексація логів
+  elasticsearch:
+    image: elasticsearch:7.17.10
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    networks:
+      - efk-net
+
+  # 2. Fluentd - агрегатор та маршрутизатор логів
+  fluentd:
+    image: fluent/fluentd:v1.16-debian-1
+    container_name: fluentd
+    volumes:
+      - ./fluentd/conf:/fluentd/etc
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    depends_on:
+      - elasticsearch
+    networks:
+      - efk-net
+
+  # 3. Kibana - візуалізація та аналіз логів
+  kibana:
+    image: kibana:7.17.10
+    container_name: kibana
+    ports:
+      - "5601:5601"
+    depends_on:
+      - elasticsearch
+    networks:
+      - efk-net
+
+  # 4. Ваш Node.js застосунок
+  node-app:
+    build: .
+    container_name: node-application
+    ports:
+      - "3000:3000"
+    depends_on:
+      - fluentd
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "localhost:24224"
+        tag: node.app
+    networks:
+      - efk-net
