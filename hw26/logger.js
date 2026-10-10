@@ -2,7 +2,7 @@ const winston = require('winston');
 const fluentLogger = require('fluent-logger');
 
 const fluentTransport = fluentLogger.createFluentSender('js_app', {
-  host: 'localhost',
+  host: 'fluentd',
   port: 24224,
   timeout: 3.0
 });
