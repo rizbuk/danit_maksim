@@ -1,0 +1,25 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: [ alertname ]
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 1h
+  receiver: telegram
+
+receivers:
+  - name: telegram
+    telegram_configs:
+      - bot_token: "8837889587:AAEioytentDcGrFR-lg-8WEHjvpc4z0vWX0" # Прибрано префікс "bot" (всередині токена він не потрібен)
+        chat_id: 377761128
+        parse_mode: HTML
+        send_resolved: true
+        message: |
+          {{ if eq .Status "firing" }}🔥 <b>[ПРОБЛЕМА] Виявлено активні алерти:</b>{{ else }}✅ <b>[ВИРІШЕНО] Ситуація нормалізувалася:</b>{{ end }}
+          {{ range .Alerts }}
+          📌 <b>Alert:</b> {{ .Annotations.summary }}
+          📝 <b>Description:</b> {{ .Annotations.description }}
+          ⚠️ <b>Severity:</b> {{ .Labels.severity }}
+          ⏱ <b>Старт:</b> {{ .StartsAt.Format "15:04:05 02-01-2006" }}
+          {{ end }}
